@@ -2,11 +2,36 @@ import boto3
 import json
 import base64
 from typing import List, Dict
-
-from PIL import Image, ImageDraw, ImageFont
-import random
-
+from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
+
+def process(results, image_file_path):
+    """
+    Processes detection results by adjusting the ymin and ymax values in the bounding boxes
+    based on the width-to-height ratio of the image.
+
+    Args:
+        results (list): List of detection results, where each result is a dictionary with keys:
+                        - 'box' (dict): Bounding box coordinates with keys 'xmin', 'ymin', 'xmax', 'ymax'.
+        image_file_path (str): Path to the image file.
+
+    Returns:
+        list: Updated detection results with adjusted ymin and ymax values.
+    """
+    # Open the image to get its dimensions
+    image = Image.open(image_file_path)
+    image_width, image_height = image.size
+
+    # Calculate the width-to-height ratio
+    ratio = image_width / image_height if image_height != 0 else 1  # Avoid division by zero
+
+    # Adjust the ymin and ymax values in the bounding boxes
+    for result in results:
+        box = result["box"]
+        box["ymin"] *= ratio
+        box["ymax"] *= ratio
+
+    return results
 
 
 def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="huggingface-pytorch-inference-2024-11-30-19-33-00-339") -> Dict:
@@ -48,6 +73,9 @@ def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="hugg
         
         # Parse and return the response
         result = json.loads(response["Body"].read().decode('utf-8'))
+
+        result = process(result, image_file_path)
+
         return result
 
     except Exception as e:
@@ -72,21 +100,15 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
     image = Image.open(image_path)
     draw = ImageDraw.Draw(image)
 
-    # Get image dimensions
-    image_width, image_height = image.size
-
     # Iterate over results and annotate the image
     for result in results:
         if result["score"] > score_threshold:
             box = result['box']
             xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
-            
-            # Calculate the width-to-height ratio
-            ratio = image_width / image_height if image_height != 0 else 1  # Avoid division by zero
 
             # Draw the bounding box
             draw.rectangle(
-                (xmin, ymin * ratio, xmax, ymax * ratio), 
+                (xmin, ymin, xmax, ymax), 
                 outline="red", 
                 width=1
             )
@@ -104,32 +126,8 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
     plt.show()
 
 
-image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/vessels/2024-08-22-00_00_2024-08-22-23_59_Sentinel-2_L2A_True_color.jpg"
-results = invoke_owlv2_endpoint(image_file_path, [["boat"]])
+image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/360_F_288218894_ZFllr0o6FhXJCZMwfVoMHV8C4fVIQJwp.jpg"
 output_image_path = "annotated_image.jpg"
-print(results)
-annotate_and_save_image(image_file_path, results, output_image_path)
 
-# image = Image.open(image_file_path)
-
-# draw = ImageDraw.Draw(image)
-
-# for result in results:
-#     if result["score"] > .05:
-
-#         box = result['box']
-#         xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
-        
-#         # Calculate the width-to-height ratio
-#         width, height = image.size
-#         ratio = width / height if height != 0 else 1  # Avoid division by zero
-
-#         # Use the ratio for scaling
-#         draw.rectangle(
-#             (xmin, ymin * ratio, xmax, ymax * ratio), 
-#             outline="red", 
-#             width=1
-#         )
-# fig, ax = plt.subplots(1)
-# ax.imshow(image)
-# plt.show()
+results = invoke_owlv2_endpoint(image_file_path, [["car"]])
+annotate_and_save_image(image_file_path, results, output_image_path, score_threshold=.1)
