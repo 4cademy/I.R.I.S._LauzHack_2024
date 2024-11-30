@@ -110,7 +110,7 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
             draw.rectangle(
                 (xmin, ymin, xmax, ymax), 
                 outline="red", 
-                width=1
+                width=3
             )
             # Optionally, you can add labels or confidence scores (uncomment the line below if needed)
             # draw.text((xmin, ymin * ratio), f"{result['label']}: {round(result['score'], 2)}", fill="white")
@@ -126,8 +126,9 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
     plt.show()
 
 
-image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/360_F_288218894_ZFllr0o6FhXJCZMwfVoMHV8C4fVIQJwp.jpg"
+image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/Screenshot 2024-11-30 at 23.32.06.jpeg"
 output_image_path = "annotated_image.jpg"
 
-results = invoke_owlv2_endpoint(image_file_path, [["car"]])
+results = invoke_owlv2_endpoint(image_file_path, [["arrow"]])
+print(results)
 annotate_and_save_image(image_file_path, results, output_image_path, score_threshold=.1)
