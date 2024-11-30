@@ -53,6 +53,7 @@ def stream_bedrock_response(prompt, model_id="anthropic.claude-3-5-sonnet-202410
     # Invoke the model and retrieve the response stream
         response = bedrock_runtime.invoke_model_with_response_stream(**kwargs)
         stream = response.get("body")
+        return stream
         if stream:
             for event in stream:
                 chunk = event.get("chunk")
