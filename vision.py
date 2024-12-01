@@ -48,6 +48,13 @@ def numpy_array_to_binary(np_array, format="PNG"):
     # Read binary data from the buffer
     return buffer.read()
 
+def numpy_array_to_base64(np_array, format="PNG"):
+    image_pil = Image.fromarray(np_array)
+    buffer = io.BytesIO()
+    image_pil.save(buffer, format="PNG")  # You can change the format if needed
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    return image_base64
 
 def invoke_owlv2_endpoint(image: np.array, labels: List[str], endpoint_name="huggingface-pytorch-inference-2024-11-30-19-33-00-339") -> Dict:
     """

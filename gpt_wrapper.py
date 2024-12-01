@@ -1,44 +1,9 @@
 import openai
 from prompts import * 
+from vision import numpy_array_to_base64
 
-
-def construct_prompt(data_list, metadata):
-    """
-    Constructs a prompt for GPT to analyze the input data with example analyses.
-    Args:
-        data_list (list): List of dictionaries containing object detection data.
-        metadata (dict): Metadata about the image.
-    
-    Returns:
-        str: The constructed prompt for GPT.
-    """
-    # Example analyses to help guide the model's response
-    # Construct the prompt with examples
-    prompt = "You are an AI assistant skilled at analyzing object detection data. Provide detailed, insightful analyses.\n\n"
-    
-    # Add example analyses
-    prompt += "Example Analyses:\n\n"
-    for example in example_analyses:
-        prompt += f"Input Metadata: {example['input']['metadata']}\n"
-        prompt += f"Input Objects: {example['input']['objects']}\n"
-        prompt += f"Analysis:\n{example['analysis']}\n\n"
-    
-    # Add the current image's data
-    prompt += "Now, analyze the following image data:\n\n"
-    prompt += f"Metadata:\n{metadata}\n\n"
-    prompt += f"Object Detection Data:\n{data_list}\n\n"
-    
-    # Prompt instructions
-    prompt += (
-        "Provide a comprehensive analysis with the following components:\n"
-        "- A summary of the detected objects\n"
-        "- Insights about the spatial distribution of objects\n"
-        "- Detailed observations about the objects and their context\n"
-        "- Any notable or interesting patterns\n\n"
-        "Be as detailed and insightful as the example analyses."
-    )
-
-    return prompt
+from PIL import Image
+import numpy as np
 
 # The rest of the code remains the same as in the previous version
 def call_openai_api(prompt, model="gpt-4o"):
@@ -58,9 +23,11 @@ def call_openai_api(prompt, model="gpt-4o"):
             messages=[
                 {"role": "system", "content": "You are an AI assistant analyzing image data."},
                 {"role": "user", "content": prompt},
-            ]
+            ],
+            stream=True,
         )
-        return response.choices[0].message.content
+        # return response.choices[0].message.content
+        return response
     except Exception as e:
         return f"Error calling OpenAI API: {e}"
 
@@ -104,6 +71,28 @@ def extract_labels(prompt, model="gpt-3.5-turbo"):
     except Exception as e:
         return f"Error calling OpenAI API: {e}"
 
+
+def analyze_image(prompt, image, model="gpt-4o"):
+
+    base64_image = numpy_array_to_base64(image)
+
+    try:
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
+            model=model,
+            messages = [{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url","image_url": {"url": f"data:image/png;base64,{base64_image}"}}]}]
+        )
+        # response = openai.Image.create(
+        #     image=image_data,
+        #     prompt="Describe the contents of this image.",
+        #     n=1,
+        #     size="1024x1024"
+        # )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error calling OpenAI API: {e}"
+
+
 # Example Usage
 if __name__ == "__main__":
     # Example input data
@@ -119,4 +108,11 @@ if __name__ == "__main__":
     # # Analyze the data
     # analysis = analyze_image_data(object_detection_data, image_metadata)
     # print(analysis)
-    print(extract_labels("Return a label"))
+    image_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/Screenshot 2024-11-30 at 22.37.15.png"  # Replace with the path to your image
+    image = Image.open(image_path)
+
+    # Convert the image to a NumPy array
+    image_array = np.array(image)
+
+    print(analyze_image("Describe this image", image_array))
+    # print(extract_labels("Return a label"))

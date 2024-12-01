@@ -49,6 +49,55 @@ extract_labels_messages = [
                         ]
 
 
+extract_labels_messages_claude = [
+                            # {"role": "required", "content": "Extract the object labels explicitly mentioned in the sentences below. Focus only on the specific objects or entities the user is asking about (e.g., 'ship,' 'car,' 'tree'). Ignore locations, places, or additional context. Return the labels in a list format."},
+                            {"role": "user", "content": [{"type": "text", "text": "How many ships are there on the image?"}]},
+                            {"role": "assistant", "content": '["ship"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "What is the color of the cars visible in the picture?"}]},
+                            {"role": "assistant", "content": '["car"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Count all the airplanes flying in the sky."}]},
+                            {"role": "assistant", "content": '["airplane"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Are there any birds perched on the tree branches?"}]},
+                            {"role": "assistant", "content": '["bird"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "How many chairs and tables are arranged in the room?"}]},
+                            {"role": "assistant", "content": '["chair", "table"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "What animals can you see in this photo?"}]},
+                            {"role": "assistant", "content": '["animal"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Do you see any books or pens on the desk?"}]},
+                            {"role": "assistant", "content": '["book", "pen"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "How many boats are anchored at the dock?"}]},
+                            {"role": "assistant", "content": '["boat"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Are there any flowers blooming in the garden?"}]},
+                            {"role": "assistant", "content": '["flower"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Can you count the bicycles parked outside?"}]},
+                            {"role": "assistant", "content": '["bicycle"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "What type of vehicles are shown in the garage?"}]},
+                            {"role": "assistant", "content": '["vehicle"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Is there a computer or monitor on the desk?"}]},
+                            {"role": "assistant", "content": '["computer", "monitor"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Are there any trees or mountains in the background?"}]},
+                            {"role": "assistant", "content": '["tree", "mountain"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "How many people are standing near the train?"}]},
+                            {"role": "assistant", "content": '["person"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Can you identify the fruits kept in the basket?"}]},
+                            {"role": "assistant", "content": '["fruit"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "What kind of animals are walking on the street?"}]},
+                            {"role": "assistant", "content": '["animal"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "How many clouds are in the sky above the houses?"}]},
+                            {"role": "assistant", "content": '["cloud"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Do you notice any stars or the moon in the night sky?"}]},
+                            {"role": "assistant", "content": '["star", "moon"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Is there a river flowing beside the mountains?"}]},
+                            {"role": "assistant", "content": '["river"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Can you see a cat or dog in this photo?"}]},
+                            {"role": "assistant", "content": '["cat", "dog"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Are there any bookshelves in the background?"}]},
+                            {"role": "assistant", "content": '["bookshelf"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "What objects are visible in this image?"}]},
+                            {"role": "assistant", "content": '["object"]'},
+                            {"role": "user", "content": [{"type": "text", "text": "Are there any bottles and glasses on the table?"}]},
+                            {"role": "assistant", "content": '["bottle", "glass"]'},
+                        ]
 
 example_analyses = [
                         {
@@ -130,3 +179,18 @@ def construct_prompt(data_list, metadata):
     )
 
     return prompt
+
+
+import json
+
+def read_stream(stream):
+    if stream:
+        for event in stream:
+            chunk = event.get("chunk")
+            if chunk:
+                chunk_data = json.loads(chunk.get("bytes", '{}'))
+            if chunk_data.get("type") == "content_block_delta":
+                # Print the response text as it streams
+                print(chunk_data["delta"]["text"], end="", flush=True)
+    else:
+        print("No stream available. Please check the model response.")
