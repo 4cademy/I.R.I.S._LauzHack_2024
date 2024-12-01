@@ -6,6 +6,8 @@ from vision import invoke_owlv2_endpoint, annotate_image
 from chatbot import stream_bedrock_response
 import json
 import cv2
+from gpt_wrapper import extract_labels
+import ast
 
 # importing os module for environment variables
 import os
@@ -54,7 +56,6 @@ def search_images(query):
                 and not website.startswith("https://www.gettyimages.com")
                 and not website.startswith("https://www.shutterstock.com")):
             links.append(link)
-            print(website)
         if len(links) == 6:
             break
 
@@ -96,14 +97,16 @@ def move_image(im):
 
 
 def analyze_image(im, promt):
+    print("Analyzing image...")
     og_im = gr.Image(im, visible=False)
 
     # Show the new image instead as a np array (opencv)
-    # TODO: Change what to search for
-    results = invoke_owlv2_endpoint(im, [["car"]])
+    lables = ast.literal_eval(extract_labels(promt))
+    results = invoke_owlv2_endpoint(im, [lables])
     result_state = results
 
-    im = annotate_image(im, results, score_threshold=.1)
+    im = gr.Image(annotate_image(im, results, score_threshold=.1),
+                  interactive=False)
 
     r_list = [im, gr.HTML("<hr>", visible=True),
               gr.Chatbot(type="messages", visible=True),
@@ -112,8 +115,8 @@ def analyze_image(im, promt):
               gr.Slider(minimum=0, maximum=1, step=0.01, value=0.1, label="Threshold", interactive=True, visible=True),
               gr.Button("Reanalyze", visible=True),
               result_state,
-              gr.Textbox(scale=6, container=False, visible=False),
-              gr.Button("Send", scale=1, visible=False),
+              gr.Textbox(scale=6, container=False, visible=False, render=False),
+              gr.Button("Send", scale=1, visible=False, render=False),
               og_im]
     return r_list
 
