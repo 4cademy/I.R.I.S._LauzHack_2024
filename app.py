@@ -4,6 +4,7 @@ import time
 from serpapi import GoogleSearch
 from vision import invoke_owlv2_endpoint, annotate_image
 from chatbot import stream_bedrock_response
+import json
 
 # importing os module for environment variables
 import os
@@ -76,7 +77,7 @@ def move_image(im):
 def analyze_image(im, promt):
     
     # Show the new image instead as a np array (opencv)
-    
+    # TODO: Change what to search for
     results = invoke_owlv2_endpoint(im, [["car"]])
     
     im = annotate_image(im, results, score_threshold=.1)
@@ -96,8 +97,23 @@ def user(user_message, history: list):
 
 
 def bot(history: list):
-
+    print(history)
+    prompt = history[-1]['content']
     stream = stream_bedrock_response(prompt)
+
+    history.append({"role": "assistant", "content": ""})
+
+    if stream:
+        for event in stream:
+            chunk = event.get("chunk")
+            if chunk:
+                chunk_data = json.loads(chunk.get("bytes", '{}'))
+                if chunk_data.get("type") == "content_block_delta":
+                    # Print the response text as it streams
+                    history[-1]['content'] += chunk_data["delta"]["text"]
+                    time.sleep(0.01)
+                    yield history
+
     # bot_message is the actual message of the chatbot
     # bot_message = "How are you? This is a test message. Just to see how the chatbot looks. Testing 1, 2, 3."
     # history.append({"role": "assistant", "content": ""})
