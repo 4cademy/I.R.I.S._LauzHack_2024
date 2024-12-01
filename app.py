@@ -5,6 +5,7 @@ from serpapi import GoogleSearch
 from vision import invoke_owlv2_endpoint, annotate_image
 from chatbot import stream_bedrock_response
 import json
+import cv2
 
 # importing os module for environment variables
 import os
@@ -67,9 +68,18 @@ def search_images(query):
 
 
 def move_image(im):
+    desired_width = 1000
+    desired_height = 1000
+    height, width, channels = im.shape
+
+    if width < desired_width:
+        desired_height = int(desired_width * height / width)
+
+    resized_im = cv2.resize(im, (desired_width, desired_height), interpolation=cv2.INTER_CUBIC)
     editor = gr.ImageEditor(
-        value=im,
+        value=resized_im,
         type="numpy",
+        scale=2,
     )
     return editor
 
@@ -165,6 +175,7 @@ with gr.Blocks() as demo:
             sources=["upload", "clipboard"],
             type="numpy",
             visible=False,
+            scale=2,
         )
 
     line2 = gr.HTML("<hr>", visible=False)
