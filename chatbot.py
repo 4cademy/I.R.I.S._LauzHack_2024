@@ -3,7 +3,6 @@ import boto3
 import json
 import os
 from prompts import *
-from vision import numpy_array_to_base64
 
 from PIL import Image
 import numpy as np
@@ -116,14 +115,14 @@ def describe_image_openai(image, labels, prompt, results, history=None, threshol
         response = client.chat.completions.create(
             model=model,
             messages=message,
-            stream=True
+            #stream=True
         )
         # Process the streamed response
-        for chunk in response:
-            print(chunk)
-            if "choices" in chunk:
-                content = chunk["choices"][0].get("delta", {}).get("content", "")
-                print(content, end="", flush=True)  # Display partial responses in real-time
+        #for chunk in response:
+            #print(chunk)
+            #if "choices" in chunk:
+                #content = chunk["choices"][0].get("delta", {}).get("content", "")
+                #print(content, end="", flush=True)  # Display partial responses in real-time
 
         return response.choices[0].message.content
     except Exception as e:

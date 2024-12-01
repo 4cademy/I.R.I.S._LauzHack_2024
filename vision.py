@@ -127,7 +127,6 @@ def annotate_image(image, results, score_threshold=0.05):
 
     # Iterate over results and annotate the image
     for result in results:
-            print(type(result))
         # if float(result["score"]) > score_threshold:
             box = result['box']
             xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
@@ -156,13 +155,5 @@ def save_image(image, output_image_path):
 
 
 import ast
-
-image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/examples/traunkirchen-road-tunnel-with-cars-austria-obersterreich-upper-austria-GGPCR1.jpg"
-output_image_path = "annotated_image.jpg"
-image = Image.open(image_file_path)
-image = np.array(image)
-results = invoke_owlv2_endpoint(image, [["car"]])
-
-print(results)
 
 # save_image(annotate_image(image, results, output_image_path), output_image_path)

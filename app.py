@@ -3,10 +3,9 @@ import numpy as np
 import time
 from serpapi import GoogleSearch
 from vision import invoke_owlv2_endpoint, annotate_image
-from chatbot import stream_bedrock_response
+from chatbot import stream_bedrock_response, describe_image_openai, extract_labels
 import json
 import cv2
-from gpt_wrapper import extract_labels
 import ast
 
 # importing os module for environment variables
@@ -123,7 +122,8 @@ def analyze_image(im, promt):
               og_im,
               gr.Button("Give example snippet to I.R.I.S", visible=True, scale=1),
               editor,
-              gr.Button("Talk to I.R.I.S", visible=True)
+              gr.Button("Talk to I.R.I.S", visible=True),
+              lables
               ]
     return r_list
 
@@ -137,35 +137,39 @@ def crop_function(editor):
     return editor
 
 
-def open_chat(og_im, result_state, prompt):
+def open_chat(og_im, result_state, prompt, labels):
+    result = describe_image_openai(og_im, labels, prompt, result_state)
+
     r_list = [gr.HTML("<hr>", visible=True),
               gr.Chatbot(type="messages", visible=True),
               gr.Textbox(scale=6, container=False, visible=True),
-              gr.Button("Send", scale=1, visible=True)]
+              gr.Button("Send", scale=1, visible=True),
+              result
+              ]
 
     return r_list
 
 
 def user(user_message, history: list):
+    if history is None:
+        history = []
     return "", history + [{"role": "user", "content": user_message}]
 
 
-def bot(history: list):
+def initial_response(history: list, answer):
+    history.append({"role": "assistant", "content": answer})
+    return history
+
+
+def bot(history: list, og_image, result_state, labels):
     prompt = history[-1]['content']
     stream = stream_bedrock_response(prompt)
 
-    history.append({"role": "assistant", "content": ""})
+    result = describe_image_openai(og_image, labels, prompt, result_state)
 
-    if stream:
-        for event in stream:
-            chunk = event.get("chunk")
-            if chunk:
-                chunk_data = json.loads(chunk.get("bytes", '{}'))
-                if chunk_data.get("type") == "content_block_delta":
-                    # Print the response text as it streams
-                    history[-1]['content'] += chunk_data["delta"]["text"]
-                    time.sleep(0.01)
-                    yield history
+    history.append({"role": "assistant", "content": result})
+
+    return history
 
     # bot_message is the actual message of the chatbot
     # bot_message = "How are you? This is a test message. Just to see how the chatbot looks. Testing 1, 2, 3."
@@ -219,6 +223,8 @@ with gr.Blocks() as demo:
             reanalyze_btn = gr.Button("Reanalyze", visible=False)
 
             im_result_state = gr.State()
+            labels_state = gr.State()
+            initial_response_state = gr.State()
         used_image = gr.Image(
             show_label=False,
             sources=["upload", "clipboard"],
@@ -271,7 +277,7 @@ with gr.Blocks() as demo:
 
     ask_btn.click(fn=analyze_image, inputs=[used_image, ask_textbox],
                   outputs=[used_image, threshold_slider, reanalyze_btn, im_result_state,
-                           ask_textbox, ask_btn, original_image, crop_button, crop_editor, open_chat_btn])
+                           ask_textbox, ask_btn, original_image, crop_button, crop_editor, open_chat_btn, labels_state])
 
     reanalyze_btn.click(fn=reanalyze_image, inputs=[original_image, threshold_slider, im_result_state],
                         outputs=used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
@@ -279,13 +285,16 @@ with gr.Blocks() as demo:
 
     crop_button.click(fn=crop_function, inputs=crop_editor, outputs=crop_editor)
 
-    open_chat_btn.click(fn=open_chat, inputs=[original_image, im_result_state, ask_textbox], outputs=[line2, chatbot, msg, send_btn]).then(fn=user, inputs=[ask_textbox, chatbot], outputs=[msg, chatbot], queue=False)
+    open_chat_btn.click(fn=open_chat, inputs=[original_image, im_result_state, ask_textbox, labels_state],
+                        outputs=[line2, chatbot, msg, send_btn, initial_response_state]).then(fn=user,
+                                                                                        inputs=[ask_textbox, chatbot],
+                                                                                        outputs=[msg, chatbot],
+                                                                                        queue=False).then(fn=initial_response,
+                                                                                                          inputs=[chatbot, initial_response_state],
+                                                                                                          outputs=chatbot)
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
-        fn=bot, inputs=chatbot, outputs=chatbot
-    )
-    msg.submit(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
-        fn=bot, inputs=chatbot, outputs=chatbot
+        fn=bot, inputs=[chatbot, original_image, im_result_state, labels_state], outputs=chatbot
     )
 
 if __name__ == "__main__":
