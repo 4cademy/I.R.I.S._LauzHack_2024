@@ -4,8 +4,10 @@ import base64
 from typing import List, Dict
 from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
+import numpy as np
+import io 
 
-def process(results, image_file_path):
+def process(results, image):
     """
     Processes detection results by adjusting the ymin and ymax values in the bounding boxes
     based on the width-to-height ratio of the image.
@@ -19,7 +21,7 @@ def process(results, image_file_path):
         list: Updated detection results with adjusted ymin and ymax values.
     """
     # Open the image to get its dimensions
-    image = Image.open(image_file_path)
+    image = Image.fromarray(image)
     image_width, image_height = image.size
 
     # Calculate the width-to-height ratio
@@ -34,7 +36,20 @@ def process(results, image_file_path):
     return results
 
 
-def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="huggingface-pytorch-inference-2024-11-30-19-33-00-339") -> Dict:
+def numpy_array_to_binary(np_array, format="PNG"):
+    # Convert NumPy array to an image using Pillow
+    image = Image.fromarray(np_array)
+
+    # Save the image to a BytesIO buffer in the specified format
+    buffer = io.BytesIO()
+    image.save(buffer, format=format)
+    buffer.seek(0)
+
+    # Read binary data from the buffer
+    return buffer.read()
+
+
+def invoke_owlv2_endpoint(image: np.array, labels: List[str], endpoint_name="huggingface-pytorch-inference-2024-11-30-19-33-00-339") -> Dict:
     """
     Calls a SageMaker endpoint with an image file and a list of labels for inference.
 
@@ -51,8 +66,10 @@ def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="hugg
 
     try:
         # Read the image in binary format
-        with open(file_path, "rb") as f:
-            image_binary = f.read()
+        # with open(file_path, "rb") as f:
+        #     image_binary = f.read()
+
+        image_binary = numpy_array_to_binary(image)
 
         # Prepare the payload
         payload = {
@@ -74,7 +91,7 @@ def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="hugg
         # Parse and return the response
         result = json.loads(response["Body"].read().decode('utf-8'))
 
-        result = process(result, image_file_path)
+        result = process(result, image)
 
         return result
 
@@ -83,7 +100,7 @@ def invoke_owlv2_endpoint(file_path: str, labels: List[str], endpoint_name="hugg
         return {"error": str(e)}
 
 
-def annotate_and_save_image(image_path, results, output_image_path, score_threshold=0.05):
+def annotate_image(image, results, score_threshold=0.05):
     """
     Annotates an image with bounding boxes based on detection results and saves it to an output file.
 
@@ -97,7 +114,7 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
         score_threshold (float): Minimum confidence score required to draw a bounding box.
     """
     # Load the image
-    image = Image.open(image_path)
+    image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
 
     # Iterate over results and annotate the image
@@ -110,11 +127,14 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
             draw.rectangle(
                 (xmin, ymin, xmax, ymax), 
                 outline="red", 
-                width=1
+                width=3
             )
             # Optionally, you can add labels or confidence scores (uncomment the line below if needed)
             # draw.text((xmin, ymin * ratio), f"{result['label']}: {round(result['score'], 2)}", fill="white")
 
+    return image
+
+def save_image(image, output_image_path):
     # Save the annotated image
     image.save(output_image_path)
     print(f"Annotated image saved to {output_image_path}")
@@ -126,8 +146,9 @@ def annotate_and_save_image(image_path, results, output_image_path, score_thresh
     plt.show()
 
 
-image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/360_F_288218894_ZFllr0o6FhXJCZMwfVoMHV8C4fVIQJwp.jpg"
-output_image_path = "annotated_image.jpg"
+# image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/Screenshot 2024-11-30 at 23.32.06.jpeg"
+# output_image_path = "annotated_image.jpg"
 
-results = invoke_owlv2_endpoint(image_file_path, [["car"]])
-annotate_and_save_image(image_file_path, results, output_image_path, score_threshold=.1)
+# results = invoke_owlv2_endpoint(image, [["arrow"]])
+# print(results)
+# annotate_image(image_file_path, results, output_image_path, score_threshold=.1)

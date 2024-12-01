@@ -1,8 +1,13 @@
 .venv/
 .idea/
+<<<<<<< HEAD
 vessels/
 iris/
 test.py
 *.jpeg
 *.jpg
 *.png
+openaikey.txt
+=======
+/.env
+>>>>>>> origin/main
