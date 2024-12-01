@@ -1,6 +1,5 @@
 .venv/
 .idea/
-<<<<<<< HEAD
 vessels/
 iris/
 test.py
@@ -8,6 +7,4 @@ test.py
 *.jpg
 *.png
 openaikey.txt
-=======
-/.env
->>>>>>> origin/main
+__pycache__
