@@ -115,18 +115,16 @@ def analyze_image(im, promt):
     im = gr.Image(annotate_image(im, results, score_threshold=.1),
                   interactive=False)
 
-    r_list = [im, gr.HTML("<hr>", visible=True),
-              gr.Chatbot(type="messages", visible=True),
-              gr.Textbox(scale=6, container=False, visible=True),
-              gr.Button("Send", scale=1, visible=True),
+    r_list = [im,
               gr.Slider(minimum=0, maximum=1, step=0.01, value=0.1, label="Threshold", interactive=True, visible=True),
               gr.Button("Reanalyze", visible=True),
               result_state,
               gr.Textbox(scale=6, container=False, visible=False, render=False),
               gr.Button("Ask", scale=1, visible=False, render=False),
               og_im,
-              gr.Button("Give example snippet to AI", visible=True, scale=1),
-              editor
+              gr.Button("Give example snippet to I.R.I.S", visible=True, scale=1),
+              editor,
+              gr.Button("Talk to I.R.I.S", visible=True)
               ]
     return r_list
 
@@ -140,6 +138,15 @@ def crop_function(editor, og_im, result_state, slider):
     updated_results = filter_patches_with_embeddings(result_state, og_im, editor["composite"], threshold=0.4)
     im = annotate_image(og_im, updated_results, score_threshold=slider)
     return updated_results, im
+
+
+def open_chat(og_im, result_state, prompt):
+    r_list = [gr.HTML("<hr>", visible=True),
+              gr.Chatbot(type="messages", visible=True),
+              gr.Textbox(scale=6, container=False, visible=True),
+              gr.Button("Send", scale=1, visible=True)]
+
+    return r_list
 
 
 def user(user_message, history: list):
@@ -231,7 +238,7 @@ with gr.Blocks() as demo:
         )
 
     with gr.Row():
-        crop_button = gr.Button("Give example snippet to AI", visible=False)
+        crop_button = gr.Button("Give example snippet to I.R.I.S", visible=False)
         crop_editor = gr.ImageEditor(
             show_label=False,
             type="numpy",
@@ -240,9 +247,11 @@ with gr.Blocks() as demo:
             crop_size="1:1",
         )
 
+    open_chat_btn = gr.Button("Talk to I.R.I.S", visible=False)
+
     line2 = gr.HTML("<hr>", visible=False)
 
-    chatbot = gr.Chatbot(type="messages", visible=False)
+    chatbot = gr.Chatbot(type="messages", label="I.R.I.S chat", visible=False)
     with gr.Row():
         msg = gr.Textbox(scale=6, container=False, visible=False)
         send_btn = gr.Button("Send", scale=1, visible=False)
@@ -264,20 +273,16 @@ with gr.Blocks() as demo:
     b6.click(fn=move_image, inputs=im6, outputs=used_image)
 
     ask_btn.click(fn=analyze_image, inputs=[used_image, ask_textbox],
-                  outputs=[used_image, line2, chatbot, msg, send_btn, threshold_slider, reanalyze_btn, im_result_state,
-                           ask_textbox, ask_btn, original_image, crop_button, crop_editor]).then(fn=user,
-                                                                                                 inputs=[ask_textbox,
-                                                                                                         chatbot],
-                                                                                                 outputs=[msg, chatbot],
-                                                                                                 queue=False).then(
-        fn=bot, inputs=chatbot, outputs=chatbot
-    )
+                  outputs=[used_image, threshold_slider, reanalyze_btn, im_result_state,
+                           ask_textbox, ask_btn, original_image, crop_button, crop_editor, open_chat_btn])
 
     reanalyze_btn.click(fn=reanalyze_image, inputs=[original_image, threshold_slider, im_result_state],
                         outputs= used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
     # outputs=[msg, chatbot], queue=False).then( fn=bot, inputs=chatbot, outputs=chatbot )
 
     crop_button.click(fn=crop_function, inputs=[crop_editor, original_image, im_result_state, threshold_slider], outputs=[im_result_state, used_image])
+
+    open_chat_btn.click(fn=open_chat, inputs=[original_image, im_result_state, ask_textbox], outputs=[line2, chatbot, msg, send_btn]).then(fn=user, inputs=[ask_textbox, chatbot], outputs=[msg, chatbot], queue=False)
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
