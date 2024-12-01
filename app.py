@@ -97,8 +97,14 @@ def move_image(im):
 
 
 def analyze_image(im, promt):
-    print("Analyzing image...")
     og_im = gr.Image(im, visible=False)
+    editor = gr.ImageEditor(
+        value=im,
+        type="numpy",
+        visible=True,
+        scale=2,
+        transforms=["crop"]
+    )
 
     # Show the new image instead as a np array (opencv)
     lables = ast.literal_eval(extract_labels(promt))
@@ -116,14 +122,21 @@ def analyze_image(im, promt):
               gr.Button("Reanalyze", visible=True),
               result_state,
               gr.Textbox(scale=6, container=False, visible=False, render=False),
-              gr.Button("Send", scale=1, visible=False, render=False),
-              og_im]
+              gr.Button("Ask", scale=1, visible=False, render=False),
+              og_im,
+              gr.Button("Give example snippet to AI", visible=True, scale=1),
+              editor
+              ]
     return r_list
 
 
 def reanalyze_image(og_im, slider, result_state):
     im = annotate_image(og_im, result_state, score_threshold=slider)
     return im
+
+
+def crop_function(editor):
+    return editor
 
 
 def user(user_message, history: list):
@@ -214,6 +227,14 @@ with gr.Blocks() as demo:
             scale=2,
         )
 
+    with gr.Row():
+        crop_button = gr.Button("Give example snippet to AI", visible=False)
+        crop_editor = gr.ImageEditor(
+            show_label=False,
+            type="numpy",
+            visible=False,
+        )
+
     line2 = gr.HTML("<hr>", visible=False)
 
     chatbot = gr.Chatbot(type="messages", visible=False)
@@ -239,14 +260,19 @@ with gr.Blocks() as demo:
 
     ask_btn.click(fn=analyze_image, inputs=[used_image, ask_textbox],
                   outputs=[used_image, line2, chatbot, msg, send_btn, threshold_slider, reanalyze_btn, im_result_state,
-                           ask_textbox, ask_btn, original_image]).then(fn=user, inputs=[ask_textbox, chatbot],
-                                                                       outputs=[msg, chatbot], queue=False).then(
+                           ask_textbox, ask_btn, original_image, crop_button, crop_editor]).then(fn=user,
+                                                                                                 inputs=[ask_textbox,
+                                                                                                         chatbot],
+                                                                                                 outputs=[msg, chatbot],
+                                                                                                 queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
     )
 
     reanalyze_btn.click(fn=reanalyze_image, inputs=[original_image, threshold_slider, im_result_state],
                         outputs=used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
     # outputs=[msg, chatbot], queue=False).then( fn=bot, inputs=chatbot, outputs=chatbot )
+
+    crop_button.click(fn=crop_function, inputs=crop_editor, outputs=crop_editor)
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
