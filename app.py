@@ -51,7 +51,8 @@ def search_images(query):
                 and not website.startswith("https://www.istockphoto.com")
                 and not website.startswith("https://www.mdpi.com")
                 and not website.startswith("https://www.researchgate.net")
-                and not website.startswith("https://www.gettyimages.com")):
+                and not website.startswith("https://www.gettyimages.com")
+                and not website.startswith("https://www.shutterstock.com")):
             links.append(link)
             print(website)
         if len(links) == 6:
