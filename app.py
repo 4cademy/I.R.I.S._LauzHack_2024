@@ -97,7 +97,6 @@ def user(user_message, history: list):
 
 
 def bot(history: list):
-    print(history)
     prompt = history[-1]['content']
     stream = stream_bedrock_response(prompt)
 
