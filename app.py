@@ -43,10 +43,19 @@ def search_images(query):
 
     search = GoogleSearch(params)
     results = search.get_dict()
-    images_results = results["images_results"][0:6]
     links = []
-    for i in range(0, 6):
-        links.append(images_results[i]["thumbnail"])
+    for result in results["images_results"]:
+        link = result["thumbnail"]
+        website = result["link"]
+        if (not website.startswith("https://www.alamy.com")
+                and not website.startswith("https://www.istockphoto.com")
+                and not website.startswith("https://www.mdpi.com")
+                and not website.startswith("https://www.researchgate.net")
+                and not website.startswith("https://www.gettyimages.com")):
+            links.append(link)
+            print(website)
+        if len(links) == 6:
+            break
 
     r_list = []
     for i in range(0, 6):
@@ -85,11 +94,10 @@ def move_image(im):
 
 
 def analyze_image(im, promt):
-    
     # Show the new image instead as a np array (opencv)
     # TODO: Change what to search for
     results = invoke_owlv2_endpoint(im, [["car"]])
-    
+
     im = annotate_image(im, results, score_threshold=.1)
 
     r_list = [im,
@@ -136,7 +144,7 @@ with gr.Blocks() as demo:
     title_image = gr.Image("images/logo.jpg", scale=1, show_label=False, height=700, interactive=False, visible=True,
                            container=False, show_download_button=False, show_share_button=False,
                            show_fullscreen_button=False)
-    start_btn = gr.Button("Start I.R.I.S", visible=True)
+    start_btn = gr.Button("Launch I.R.I.S", visible=True)
 
     q1 = gr.HTML("<h1>Which images shall I find?</h1>", visible=False)
     search_textbox = gr.Textbox(lines=1, container=False, placeholder="Type here...", visible=False)
@@ -204,8 +212,8 @@ with gr.Blocks() as demo:
     ask_btn.click(fn=analyze_image, inputs=[used_image, ask_textbox],
                   outputs=[used_image, line2, chatbot, msg, send_btn]).then(fn=user, inputs=[ask_textbox, chatbot],
                                                                             outputs=[msg, chatbot], queue=False).then(
-                                                                            fn=bot, inputs=chatbot, outputs=chatbot
-        )
+        fn=bot, inputs=chatbot, outputs=chatbot
+    )
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
