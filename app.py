@@ -91,24 +91,36 @@ def move_image(im):
         type="numpy",
         scale=2,
     )
+
     return editor
 
 
 def analyze_image(im, promt):
+    og_im = gr.Image(im, visible=False)
+
     # Show the new image instead as a np array (opencv)
     # TODO: Change what to search for
     results = invoke_owlv2_endpoint(im, [["car"]])
+    result_state = results
 
     im = annotate_image(im, results, score_threshold=.1)
 
-    r_list = [im,
-              gr.HTML("<hr>", visible=True),
+    r_list = [im, gr.HTML("<hr>", visible=True),
               gr.Chatbot(type="messages", visible=True),
               gr.Textbox(scale=6, container=False, visible=True),
-              gr.Button("Send", scale=1, visible=True)
-              ]
-
+              gr.Button("Send", scale=1, visible=True),
+              gr.Slider(minimum=0, maximum=1, step=0.01, value=0.1, label="Threshold", interactive=True, visible=True),
+              gr.Button("Reanalyze", visible=True),
+              result_state,
+              gr.Textbox(scale=6, container=False, visible=False),
+              gr.Button("Send", scale=1, visible=False),
+              og_im]
     return r_list
+
+
+def reanalyze_image(og_im, slider, result_state):
+    im = annotate_image(og_im, result_state, score_threshold=slider)
+    return im
 
 
 def user(user_message, history: list):
@@ -179,7 +191,19 @@ with gr.Blocks() as demo:
             q2 = gr.HTML("<h1>What shall I analyze in the image?</h1>", visible=False)
             ask_textbox = gr.Textbox(lines=1, container=False, visible=False)
             ask_btn = gr.Button("Ask", visible=False)
+            threshold_slider = gr.Slider(minimum=0, maximum=1, step=0.01, value=0.1, label="Threshold",
+                                         interactive=True, visible=False)
+            reanalyze_btn = gr.Button("Reanalyze", visible=False)
+
+            im_result_state = gr.State()
         used_image = gr.Image(
+            show_label=False,
+            sources=["upload", "clipboard"],
+            type="numpy",
+            visible=False,
+            scale=2,
+        )
+        original_image = gr.Image(
             show_label=False,
             sources=["upload", "clipboard"],
             type="numpy",
@@ -211,10 +235,15 @@ with gr.Blocks() as demo:
     b6.click(fn=move_image, inputs=im6, outputs=used_image)
 
     ask_btn.click(fn=analyze_image, inputs=[used_image, ask_textbox],
-                  outputs=[used_image, line2, chatbot, msg, send_btn]).then(fn=user, inputs=[ask_textbox, chatbot],
-                                                                            outputs=[msg, chatbot], queue=False).then(
+                  outputs=[used_image, line2, chatbot, msg, send_btn, threshold_slider, reanalyze_btn, im_result_state,
+                           ask_textbox, ask_btn, original_image]).then(fn=user, inputs=[ask_textbox, chatbot],
+                                                                       outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
     )
+
+    reanalyze_btn.click(fn=reanalyze_image, inputs=[original_image, threshold_slider, im_result_state],
+                        outputs=used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
+    # outputs=[msg, chatbot], queue=False).then( fn=bot, inputs=chatbot, outputs=chatbot )
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot
