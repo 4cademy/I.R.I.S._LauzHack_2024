@@ -1,5 +1,9 @@
 # IRIS - Intelligent Recognition & Image Search
 
+## Demo Video
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Ukx69JS2VaU/0.jpg)](https://www.youtube.com/watch?v=Ukx69JS2VaU)
+
 ## Prerequisites
 ```
 git clone https://github.com/4cademy/I.R.I.S._LauzHack_2024.git repo
@@ -15,6 +19,9 @@ export AWS_ACCESS_KEY_ID="your_aws_access_key_id"
 export AWS_SECRET_ACCESS_KEY="your_aws_secret_access_key"
 export AWS_SESSION_TOKEN="your_aws_session_token"
 export OPENAI_API_KEY="your_openai_api_key"
+```
+## Installation
+```bash
 pip install -r requirements.txt
 python app.py
 ```
