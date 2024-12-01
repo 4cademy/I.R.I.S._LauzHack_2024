@@ -163,9 +163,8 @@ def initial_response(history: list, answer):
 
 def bot(history: list, og_image, result_state, labels):
     prompt = history[-1]['content']
-    stream = stream_bedrock_response(prompt)
 
-    result = describe_image_openai(og_image, labels, prompt, result_state)
+    result = describe_image_openai(og_image, labels, prompt, result_state, history)
 
     history.append({"role": "assistant", "content": result})
 
@@ -298,4 +297,4 @@ with gr.Blocks() as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)

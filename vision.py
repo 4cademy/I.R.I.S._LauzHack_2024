@@ -127,7 +127,7 @@ def annotate_image(image, results, score_threshold=0.05):
 
     # Iterate over results and annotate the image
     for result in results:
-        # if float(result["score"]) > score_threshold:
+        if result["score"] > score_threshold:
             box = result['box']
             xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
 
