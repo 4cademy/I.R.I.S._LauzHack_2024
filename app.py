@@ -103,7 +103,7 @@ def analyze_image(im, promt):
         type="numpy",
         visible=True,
         scale=2,
-        transforms=["crop"]
+        crop_size="1:1",
     )
 
     # Show the new image instead as a np array (opencv)
@@ -233,6 +233,8 @@ with gr.Blocks() as demo:
             show_label=False,
             type="numpy",
             visible=False,
+            scale=2,
+            crop_size="1:1",
         )
 
     line2 = gr.HTML("<hr>", visible=False)
