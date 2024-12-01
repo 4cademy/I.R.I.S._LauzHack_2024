@@ -8,6 +8,7 @@ test.py
 *.jpg
 *.png
 openaikey.txt
+__pycache__
 =======
 /.env
 >>>>>>> origin/main

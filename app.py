@@ -1,6 +1,5 @@
 import gradio as gr
 import numpy as np
-import time
 from serpapi import GoogleSearch
 from vision import invoke_owlv2_endpoint, annotate_image
 from chatbot import stream_bedrock_response
@@ -8,6 +7,8 @@ import json
 import cv2
 from gpt_wrapper import extract_labels
 import ast
+from images_matching import filter_patches_with_embeddings
+import time
 
 # importing os module for environment variables
 import os
@@ -135,8 +136,10 @@ def reanalyze_image(og_im, slider, result_state):
     return im
 
 
-def crop_function(editor):
-    return editor
+def crop_function(editor, og_im, result_state, slider):
+    updated_results = filter_patches_with_embeddings(result_state, og_im, editor["composite"], threshold=0.4)
+    im = annotate_image(og_im, updated_results, score_threshold=slider)
+    return updated_results, im
 
 
 def user(user_message, history: list):
@@ -271,10 +274,10 @@ with gr.Blocks() as demo:
     )
 
     reanalyze_btn.click(fn=reanalyze_image, inputs=[original_image, threshold_slider, im_result_state],
-                        outputs=used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
+                        outputs= used_image)  # .then(fn=user, inputs=[ask_textbox, chatbot],
     # outputs=[msg, chatbot], queue=False).then( fn=bot, inputs=chatbot, outputs=chatbot )
 
-    crop_button.click(fn=crop_function, inputs=crop_editor, outputs=crop_editor)
+    crop_button.click(fn=crop_function, inputs=[crop_editor, original_image, im_result_state, threshold_slider], outputs=[im_result_state, used_image])
 
     send_btn.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
         fn=bot, inputs=chatbot, outputs=chatbot

@@ -3,6 +3,7 @@ import boto3
 import json
 import base64
 import time
+import torchvision
 from PIL import Image, ImageDraw
 
 from vision import invoke_owlv2_endpoint
