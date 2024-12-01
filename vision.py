@@ -5,6 +5,7 @@ from typing import List, Dict
 from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
 import numpy as np
+from botocore.config import Config
 import io 
 
 def process(results, image):
@@ -68,7 +69,7 @@ def invoke_owlv2_endpoint(image: np.array, labels: List[str], endpoint_name="hug
     Returns:
         Dict: The inference results returned by the model.
     """
-    # Initialize SageMaker runtime client
+    
     runtime = boto3.client('sagemaker-runtime')
 
     try:
@@ -126,7 +127,8 @@ def annotate_image(image, results, score_threshold=0.05):
 
     # Iterate over results and annotate the image
     for result in results:
-        if result["score"] > score_threshold:
+            print(type(result))
+        # if float(result["score"]) > score_threshold:
             box = result['box']
             xmin, ymin, xmax, ymax = box["xmin"], box["ymin"], box["xmax"], box["ymax"]
 
@@ -153,9 +155,14 @@ def save_image(image, output_image_path):
     plt.show()
 
 
-# image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/Screenshot 2024-11-30 at 23.32.06.jpeg"
-# output_image_path = "annotated_image.jpg"
+import ast
 
-# results = invoke_owlv2_endpoint(image, [["arrow"]])
-# print(results)
-# annotate_image(image_file_path, results, output_image_path, score_threshold=.1)
+image_file_path = "/Users/cloud9/Desktop/IRIS/I.R.I.S._LauzHack_2024/examples/traunkirchen-road-tunnel-with-cars-austria-obersterreich-upper-austria-GGPCR1.jpg"
+output_image_path = "annotated_image.jpg"
+image = Image.open(image_file_path)
+image = np.array(image)
+results = invoke_owlv2_endpoint(image, [["car"]])
+
+print(results)
+
+# save_image(annotate_image(image, results, output_image_path), output_image_path)
