@@ -1,4 +1,4 @@
-# I.R.I.S - Intelligent Recognition & Image Search
+# IRIS - Intelligent Recognition & Image Search
 
 ## Prerequisites
 ```
