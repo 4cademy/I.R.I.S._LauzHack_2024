@@ -6,6 +6,8 @@ import json
 import base64
 from vision import invoke_owlv2_endpoint, annotate_image, numpy_array_to_base64, numpy_array_to_binary
 # import time
+import time
+import torchvision
 from PIL import Image, ImageDraw
 
 from vision import invoke_owlv2_endpoint
@@ -100,7 +102,7 @@ def invoke_segmentation_model(image, endpoint_name, boxes):
 
 
 
-        
+
 # Updated function to process image
 def process_image_with_segmentation(image_array):
     """
