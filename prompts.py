@@ -142,6 +142,8 @@ example_analyses = [
                     ]
 
 
+prompt_describe_image = "Please provide a brief description of the provided image, focusing on elements relevant to energy usage, sources, and infrastructure. Highlight key features such as renewable energy installations, fossil fuel operations, energy consumption patterns, and any visible impacts on the environment. The description should be succinct and detailed enough to facilitate further analysis on energy forecasting, trading, and resource management. Include any observable contrasts between sustainable practices and traditional energy methods."
+
 def construct_prompt(data_list, metadata):
     """
     Constructs a prompt for GPT to analyze the input data with example analyses.
