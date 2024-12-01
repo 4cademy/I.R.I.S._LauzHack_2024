@@ -121,7 +121,7 @@ def analyze_image(im, promt):
               gr.Textbox(scale=6, container=False, visible=False, render=False),
               gr.Button("Ask", scale=1, visible=False, render=False),
               og_im,
-              gr.Button("Give example snippet to AI", visible=True, scale=1),
+              gr.Button("Give example snippet to I.R.I.S", visible=True, scale=1),
               editor,
               gr.Button("Talk to I.R.I.S", visible=True)
               ]
@@ -235,7 +235,7 @@ with gr.Blocks() as demo:
         )
 
     with gr.Row():
-        crop_button = gr.Button("Give example snippet to AI", visible=False)
+        crop_button = gr.Button("Give example snippet to I.R.I.S", visible=False)
         crop_editor = gr.ImageEditor(
             show_label=False,
             type="numpy",
